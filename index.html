@@ -245,6 +245,11 @@
     input[type="number"].defect:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 2px rgba(255,138,76,.2); }
     input[type="number"].has-val.avail { border-color: rgba(255,204,51,.45); }
     input[type="number"].has-val.defect { border-color: rgba(255,138,76,.5); color: var(--orange); }
+    input[type="number"].remote-flash { animation: remoteFlash 1.8s ease-out; }
+    @keyframes remoteFlash {
+      0%   { background: rgba(53,201,138,.55); box-shadow: 0 0 0 2px rgba(53,201,138,.5); }
+      100% { background: var(--input); box-shadow: none; }
+    }
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
@@ -304,6 +309,8 @@
         <span id="netLabel">Offline</span>
         <span>·</span>
         <span id="saveLabel">Local only</span>
+        <span>·</span>
+        <span id="liveLabel" title="Live updates from other users">Live: off</span>
       </div>
     </div>
     <div class="quicknav" id="quicknav"></div>
@@ -502,6 +509,10 @@
   let data = {};          // { groupKey: { sizeOr"_": { available, defective } } }
   let meta = { lastSaved: null, lastSynced: null, dirty: false };
   let searchTerm = "";
+  let dirtyGroups = new Set();   // groups changed locally, pending a lightweight auto-push
+  let focusedKey = null;         // "group|size|field" currently being typed into
+  let autoPushTimer = null;
+  let livePolling = false;
 
   function load() {
     try {
@@ -725,7 +736,10 @@
     /* bind inputs */
     root.querySelectorAll("input[type=number]").forEach(inp => {
       inp.addEventListener("change", onInput);
-      inp.addEventListener("blur", onInput);
+      inp.addEventListener("blur", (e) => { onInput(e); focusedKey = null; });
+      inp.addEventListener("focus", (e) => {
+        focusedKey = e.target.dataset.g + "|" + e.target.dataset.s + "|" + e.target.dataset.f;
+      });
     });
 
     updateStats();
@@ -739,7 +753,101 @@
     setVal(g, s, f, el.value);
     el.classList.toggle("has-val", el.value !== "");
     persist();
+    dirtyGroups.add(g);
+    scheduleAutoPush();
     render(); // refresh fill badges & size-chip highlight, preserves values from `data`
+  }
+
+  /* ---------- Live collaboration: auto-push + polling ---------- */
+  function scheduleAutoPush() {
+    clearTimeout(autoPushTimer);
+    autoPushTimer = setTimeout(autoPush, 1500);
+  }
+
+  async function autoPush() {
+    if (!navigator.onLine || APPS_SCRIPT_URL.includes("PASTE_YOUR") || dirtyGroups.size === 0) return;
+    const groups = Array.from(dirtyGroups);
+    dirtyGroups.clear();
+    const partialInventory = {};
+    groups.forEach(g => { if (data[g]) partialInventory[g] = data[g]; });
+
+    const payload = {
+      timestamp: new Date().toISOString(),
+      device: navigator.userAgent.slice(0, 80),
+      inventory: partialInventory,
+      catalogueVersion: 1
+    };
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json().catch(() => ({ ok: false }));
+      if (json.ok) {
+        meta.lastSynced = new Date().toISOString();
+        localStorage.setItem(META_KEY, JSON.stringify(meta));
+        updateMetaUI();
+      } else {
+        // put groups back so the next cycle retries
+        groups.forEach(g => dirtyGroups.add(g));
+      }
+    } catch (err) {
+      groups.forEach(g => dirtyGroups.add(g));
+    }
+  }
+
+  async function pollRemote() {
+    if (!navigator.onLine || APPS_SCRIPT_URL.includes("PASTE_YOUR")) return;
+    try {
+      const res = await fetch(APPS_SCRIPT_URL + "?t=" + Date.now(), { method: "GET", cache: "no-store" });
+      const json = await res.json();
+      if (!json.ok || !json.inventory) return;
+
+      let changed = false;
+      Object.keys(json.inventory).forEach(g => {
+        const remoteGroup = json.inventory[g];
+        Object.keys(remoteGroup).forEach(sizeKey => {
+          ["available", "defective"].forEach(field => {
+            const fk = g + "|" + sizeKey + "|" + field;
+            if (fk === focusedKey) return; // never clobber what the user is typing right now
+            if (dirtyGroups.has(g)) return; // local edit not yet pushed - don't overwrite it
+
+            const remoteVal = remoteGroup[sizeKey][field];
+            const localVal = getVal(g, sizeKey === "_" ? null : sizeKey, field);
+            const remoteNorm = remoteVal === "" || remoteVal == null ? "" : Number(remoteVal);
+            const localNorm = localVal === "" ? "" : Number(localVal);
+            if (remoteNorm !== localNorm) {
+              if (!data[g]) data[g] = {};
+              if (!data[g][sizeKey]) data[g][sizeKey] = { available: "", defective: "" };
+              data[g][sizeKey][field] = remoteNorm;
+              changed = true;
+
+              const sel = `input[data-g="${g}"][data-s="${sizeKey === "_" ? "_" : sizeKey}"][data-f="${field}"]`;
+              const inp = document.querySelector(sel);
+              if (inp) {
+                inp.value = remoteNorm;
+                inp.classList.toggle("has-val", remoteNorm !== "");
+                inp.classList.remove("remote-flash");
+                void inp.offsetWidth; // restart animation
+                inp.classList.add("remote-flash");
+              }
+            }
+          });
+        });
+      });
+
+      if (changed) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        updateStats();
+      }
+      const lbl = document.getElementById("liveLabel");
+      lbl.textContent = "Live: on · " + new Date().toLocaleTimeString();
+      livePolling = true;
+    } catch (err) {
+      document.getElementById("liveLabel").textContent = "Live: retrying…";
+    }
   }
 
   /* ---------- UI helpers ---------- */
@@ -882,6 +990,16 @@
 
   /* auto-persist every 30s if dirty */
   setInterval(() => { if (meta.dirty) persist(); }, 30000);
+
+  /* live collaboration: poll every 5s for other users' updates */
+  const liveLabelEl = document.getElementById("liveLabel");
+  if (APPS_SCRIPT_URL.includes("PASTE_YOUR")) {
+    liveLabelEl.textContent = "Live: not configured";
+  } else {
+    liveLabelEl.textContent = "Live: connecting…";
+    pollRemote();
+    setInterval(pollRemote, 5000);
+  }
   </script>
 </body>
 </html>
