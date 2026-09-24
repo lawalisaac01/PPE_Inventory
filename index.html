@@ -800,10 +800,19 @@
 
   async function pollRemote() {
     if (!navigator.onLine || APPS_SCRIPT_URL.includes("PASTE_YOUR")) return;
+    const lbl = document.getElementById("liveLabel");
     try {
       const res = await fetch(APPS_SCRIPT_URL + "?t=" + Date.now(), { method: "GET", cache: "no-store" });
       const json = await res.json();
-      if (!json.ok || !json.inventory) return;
+
+      if (!json.ok) {
+        lbl.textContent = "Live: error – " + (json.message || "unknown");
+        return;
+      }
+      if (!json.inventory) {
+        lbl.textContent = "Live: script not updated yet";
+        return;
+      }
 
       let changed = false;
       Object.keys(json.inventory).forEach(g => {
@@ -842,11 +851,10 @@
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
         updateStats();
       }
-      const lbl = document.getElementById("liveLabel");
       lbl.textContent = "Live: on · " + new Date().toLocaleTimeString();
       livePolling = true;
     } catch (err) {
-      document.getElementById("liveLabel").textContent = "Live: retrying…";
+      document.getElementById("liveLabel").textContent = "Live: connection failed, retrying…";
     }
   }
 
