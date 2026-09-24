@@ -3,142 +3,251 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#14181c" />
   <meta name="description" content="ARAHAS PPE Offline-First Inventory – Available & Defective stock capture" />
   <title>ARAHAS PPE Inventory</title>
   <style>
     :root {
-      --bg: #f1f5f9;
-      --card: #1e293b;
-      --border: #334155;
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --ok: #22c55e;
-      --warn: #f59e0b;
-      --danger: #ef4444;
-      --input: #0f172a;
+      --bg: #14181c;
+      --bg-soft: #191f24;
+      --card: #1d252b;
+      --card-head: #232d34;
+      --border: #303b42;
+      --border-soft: #263039;
+      --text: #edf1f3;
+      --muted: #8a9aa4;
+      --muted-dim: #5f6d76;
+      --yellow: #ffcc33;
+      --yellow-dim: #4a4020;
+      --orange: #ff8a4c;
+      --ok: #35c98a;
+      --ok-dim: #1c3a2e;
+      --warn: #ffcc33;
+      --danger: #ff6b6b;
+      --input: #12171b;
+      --radius: 10px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-padding-top: 6.5rem; }
     body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+      background:
+        radial-gradient(1100px 480px at 90% -10%, rgba(255,204,51,.05), transparent 60%),
+        var(--bg);
       color: var(--text);
       line-height: 1.45;
       min-height: 100dvh;
       padding: 0 0 5rem;
     }
+
+    /* ---------- Header ---------- */
     header {
-      position: sticky; top: 0; z-index: 50;
-      background: rgba(15,23,42,.92);
-      backdrop-filter: blur(8px);
+      position: sticky; top: 0; z-index: 60;
+      background: rgba(20,24,28,.94);
+      backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--border);
-      padding: .75rem 1rem;
-      display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between;
     }
-    header h1 { font-size: 1.05rem; font-weight: 650; letter-spacing: .02em; }
+    .header-top {
+      padding: .8rem 1rem .6rem;
+      display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; justify-content: space-between;
+      max-width: 980px; margin: 0 auto;
+    }
+    .brand { display: flex; align-items: center; gap: .6rem; }
+    .brand-mark {
+      width: 32px; height: 32px; flex: none;
+      display: grid; place-items: center;
+      background: var(--yellow);
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    }
+    .brand-mark svg { width: 18px; height: 18px; }
+    h1 { font-size: 1rem; font-weight: 700; letter-spacing: .01em; }
+    h1 span { display: block; font-size: .68rem; font-weight: 500; color: var(--muted); letter-spacing: .04em; margin-top: .1rem; }
     .status {
-      display: flex; gap: .6rem; align-items: center; font-size: .8rem; color: var(--muted);
+      display: flex; gap: .55rem; align-items: center; font-size: .78rem; color: var(--muted);
     }
     .dot {
-      width: .55rem; height: .55rem; border-radius: 50%;
+      width: .5rem; height: .5rem; border-radius: 50%;
       background: var(--danger);
+      box-shadow: 0 0 0 3px rgba(255,107,107,.15);
     }
-    .dot.online { background: var(--ok); }
-    .dot.pending { background: var(--warn); }
-    main { max-width: 920px; margin: 0 auto; padding: 1rem; }
+    .dot.online { background: var(--ok); box-shadow: 0 0 0 3px rgba(53,201,138,.15); }
+
+    /* Quick nav strip */
+    .quicknav {
+      display: flex; gap: .4rem; overflow-x: auto;
+      padding: 0 1rem .7rem; max-width: 980px; margin: 0 auto;
+      scrollbar-width: none;
+    }
+    .quicknav::-webkit-scrollbar { display: none; }
+    .navchip {
+      flex: none;
+      display: flex; align-items: center; gap: .35rem;
+      font-size: .74rem; font-weight: 600; color: var(--muted);
+      background: var(--bg-soft); border: 1px solid var(--border-soft);
+      padding: .35rem .65rem; border-radius: 999px;
+      cursor: pointer; white-space: nowrap;
+    }
+    .navchip svg { width: 13px; height: 13px; opacity: .8; }
+    .navchip .count { color: var(--muted-dim); font-weight: 500; }
+    .navchip.complete { border-color: rgba(53,201,138,.35); color: var(--ok); }
+    .navchip.complete .count { color: var(--ok); opacity: .7; }
+
+    main { max-width: 980px; margin: 0 auto; padding: 1rem; }
+
+    /* ---------- Stats & toolbar ---------- */
+    .statbar {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: .6rem;
+      margin-bottom: 1rem;
+    }
+    .stat {
+      background: var(--card); border: 1px solid var(--border-soft); border-radius: var(--radius);
+      padding: .65rem .75rem;
+    }
+    .stat .num { font-size: 1.25rem; font-weight: 700; line-height: 1.1; }
+    .stat .lbl { font-size: .68rem; color: var(--muted); margin-top: .15rem; text-transform: uppercase; letter-spacing: .04em; }
+    .stat.avail .num { color: var(--yellow); }
+    .stat.defect .num { color: var(--orange); }
+    .stat.progress .num { color: var(--ok); }
+
     .toolbar {
-      display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem;
+      display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .7rem;
     }
     button, .btn {
       appearance: none; border: 1px solid var(--border);
       background: var(--card); color: var(--text);
-      padding: .55rem .9rem; border-radius: 8px; font-size: .875rem;
-      cursor: pointer; font-weight: 500;
+      padding: .55rem .9rem; border-radius: 8px; font-size: .82rem;
+      cursor: pointer; font-weight: 600;
+      transition: border-color .15s, transform .1s;
     }
-    button:hover { border-color: var(--accent); }
-    button.primary { background: var(--accent); color: #0f172a; border-color: transparent; font-weight: 650; }
-    button.primary:disabled { opacity: .5; cursor: not-allowed; }
-    button.ghost { background: transparent; }
+    button:hover { border-color: var(--yellow); }
+    button:active { transform: scale(.98); }
+    button.primary { background: var(--yellow); color: #1a1400; border-color: transparent; }
+    button.primary:disabled { opacity: .4; cursor: not-allowed; }
+    button.ghost { background: transparent; color: var(--muted); }
+
+    .searchbar {
+      position: relative; margin-bottom: 1.1rem;
+    }
+    .searchbar svg {
+      position: absolute; left: .7rem; top: 50%; transform: translateY(-50%);
+      width: 15px; height: 15px; color: var(--muted-dim); pointer-events: none;
+    }
+    .searchbar input {
+      width: 100%; background: var(--card); border: 1px solid var(--border-soft);
+      color: var(--text); padding: .6rem .8rem .6rem 2.1rem; border-radius: 999px;
+      font-size: .85rem;
+    }
+    .searchbar input:focus { outline: none; border-color: var(--yellow); }
+
     .meta {
-      font-size: .78rem; color: var(--muted); margin-bottom: 1rem;
-      display: flex; flex-wrap: wrap; gap: .75rem;
+      font-size: .74rem; color: var(--muted-dim); margin-bottom: 1rem;
+      display: flex; flex-wrap: wrap; gap: .5rem .9rem; align-items: center;
     }
+    .meta .sep { opacity: .5; }
+
+    /* ---------- Category sections ---------- */
     section.cat {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      margin-bottom: 1rem;
+      border-radius: 14px;
+      margin-bottom: .85rem;
       overflow: hidden;
+      scroll-margin-top: 6.5rem;
     }
     section.cat > summary, .cat-head {
       list-style: none;
-      padding: .85rem 1rem;
-      font-weight: 650;
+      padding: .8rem .95rem;
       cursor: pointer;
-      display: flex; justify-content: space-between; align-items: center;
-      background: #162032;
+      display: flex; justify-content: space-between; align-items: center; gap: .6rem;
+      background: var(--card-head);
       border-bottom: 1px solid var(--border);
       user-select: none;
     }
     section.cat > summary::-webkit-details-marker { display: none; }
-    .cat-body { padding: .5rem .75rem 1rem; }
-    .item-block {
-      margin: .75rem 0;
-      padding: .65rem;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: #162032;
+    .cat-head-left { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .cat-icon {
+      width: 30px; height: 30px; flex: none; border-radius: 8px;
+      background: var(--yellow-dim); color: var(--yellow);
+      display: grid; place-items: center;
     }
+    .cat-icon svg { width: 16px; height: 16px; }
+    .cat-title { font-weight: 700; font-size: .92rem; }
+    .cat-sub { font-size: .7rem; color: var(--muted-dim); margin-top: .05rem; }
+    .cat-badge {
+      font-size: .7rem; font-weight: 700; color: var(--muted);
+      background: var(--bg-soft); border: 1px solid var(--border-soft);
+      padding: .25rem .55rem; border-radius: 999px; flex: none;
+    }
+    .cat-badge.complete { color: var(--ok); border-color: rgba(53,201,138,.3); background: var(--ok-dim); }
+    .chev { width: 16px; height: 16px; color: var(--muted-dim); transition: transform .18s; flex: none; }
+    details[open] > summary .chev { transform: rotate(180deg); }
+
+    .cat-body { padding: .7rem .8rem .9rem; }
+    .item-block {
+      margin: .6rem 0;
+      padding: .7rem;
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      background: var(--bg-soft);
+    }
+    .item-block.hidden { display: none; }
+    .item-title-row { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; margin-bottom: .55rem; }
     .item-title {
-      font-size: .82rem;
+      font-size: .76rem;
       color: var(--muted);
       white-space: pre-line;
-      margin-bottom: .5rem;
-      line-height: 1.35;
+      line-height: 1.4;
     }
-    .item-title strong { color: var(--text); font-size: .9rem; }
-    .rows { display: grid; gap: .4rem; }
+    .item-title strong { color: var(--text); font-size: .87rem; display: block; margin-bottom: .1rem; }
+    .item-fill { font-size: .68rem; color: var(--muted-dim); white-space: nowrap; flex: none; padding-top: .15rem; }
+
+    .rows { display: grid; gap: .35rem; }
     .row {
       display: grid;
-      grid-template-columns: minmax(70px, 90px) 1fr 1fr;
+      grid-template-columns: minmax(64px, 84px) 1fr 1fr;
       gap: .4rem;
       align-items: center;
       font-size: .85rem;
     }
     .row.header {
-      font-size: .72rem;
+      font-size: .65rem;
       text-transform: uppercase;
-      letter-spacing: .04em;
-      color: var(--muted);
-      padding-bottom: .2rem;
+      letter-spacing: .05em;
+      color: var(--muted-dim);
+      padding-bottom: .15rem;
     }
+    .row.header .lbl-avail { color: var(--yellow); opacity: .85; }
+    .row.header .lbl-defect { color: var(--orange); opacity: .85; }
     .size {
-      font-weight: 600;
-      color: var(--accent);
+      font-weight: 700;
+      color: var(--text);
       text-align: center;
-      padding: .35rem;
+      padding: .4rem .3rem;
       background: var(--input);
       border-radius: 6px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-soft);
+      font-size: .78rem;
     }
+    .size.filled { border-color: var(--yellow); box-shadow: inset 0 0 0 1px rgba(255,204,51,.25); }
+
     input[type="number"] {
       width: 100%;
       background: var(--input);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-soft);
       color: var(--text);
-      padding: .4rem .5rem;
+      padding: .42rem .5rem;
       border-radius: 6px;
-      font-size: .9rem;
+      font-size: .88rem;
       -moz-appearance: textfield;
+      text-align: center;
     }
-    input[type="number"]:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(56,189,248,.25);
-    }
+    input[type="number"].avail:focus { outline: none; border-color: var(--yellow); box-shadow: 0 0 0 2px rgba(255,204,51,.2); }
+    input[type="number"].defect:focus { outline: none; border-color: var(--orange); box-shadow: 0 0 0 2px rgba(255,138,76,.2); }
+    input[type="number"].has-val.avail { border-color: rgba(255,204,51,.45); }
+    input[type="number"].has-val.defect { border-color: rgba(255,138,76,.5); color: var(--orange); }
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
     .single-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -146,56 +255,86 @@
     }
     .field label {
       display: block;
-      font-size: .7rem;
-      color: var(--muted);
-      margin-bottom: .2rem;
+      font-size: .66rem;
+      color: var(--muted-dim);
+      margin-bottom: .25rem;
       text-transform: uppercase;
-      letter-spacing: .03em;
+      letter-spacing: .04em;
     }
+    .field.avail label { color: var(--yellow); opacity: .85; }
+    .field.defect label { color: var(--orange); opacity: .85; }
+
     .toast {
       position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
-      background: #1e293b; border: 1px solid var(--border);
+      background: #1d252b; border: 1px solid var(--border);
       color: var(--text); padding: .65rem 1.1rem; border-radius: 999px;
       font-size: .85rem; z-index: 100; opacity: 0; pointer-events: none;
-      transition: opacity .25s; box-shadow: 0 8px 24px rgba(0,0,0,.35);
+      transition: opacity .25s, transform .25s; box-shadow: 0 10px 28px rgba(0,0,0,.45);
     }
-    .toast.show { opacity: 1; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
     .toast.ok { border-color: var(--ok); }
     .toast.warn { border-color: var(--warn); }
     .toast.err { border-color: var(--danger); }
+
+    .empty-state { text-align: center; color: var(--muted-dim); font-size: .82rem; padding: 2rem 0; }
+
     footer {
-      text-align: center; font-size: .72rem; color: var(--muted);
+      text-align: center; font-size: .7rem; color: var(--muted-dim);
       padding: 1.5rem 1rem 2rem;
     }
+
     @media (max-width: 520px) {
-      .row { grid-template-columns: 64px 1fr 1fr; }
-      header h1 { font-size: .95rem; }
+      .row { grid-template-columns: 58px 1fr 1fr; }
+      .statbar { grid-template-columns: repeat(2,1fr); }
+      h1 { font-size: .92rem; }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>ARAHAS PPE Inventory</h1>
-    <div class="status">
-      <span class="dot" id="netDot" title="Network"></span>
-      <span id="netLabel">Offline</span>
-      <span>·</span>
-      <span id="saveLabel">Local only</span>
+    <div class="header-top">
+      <div class="brand">
+        <div class="brand-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#1a1400" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 6v6c0 5 3.8 8.6 9 10 5.2-1.4 9-5 9-10V6l-9-4Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <h1>ARAHAS PPE Inventory<span>Field stock count · Available &amp; defective</span></h1>
+      </div>
+      <div class="status">
+        <span class="dot" id="netDot" title="Network"></span>
+        <span id="netLabel">Offline</span>
+        <span>·</span>
+        <span id="saveLabel">Local only</span>
+      </div>
     </div>
+    <div class="quicknav" id="quicknav"></div>
   </header>
 
   <main>
+    <div class="statbar" id="statbar">
+      <div class="stat progress"><div class="num" id="statProgress">0%</div><div class="lbl">Entries filled</div></div>
+      <div class="stat avail"><div class="num" id="statAvail">0</div><div class="lbl">Total available</div></div>
+      <div class="stat defect"><div class="num" id="statDefect">0</div><div class="lbl">Total defective</div></div>
+      <div class="stat"><div class="num" id="statCats">0/0</div><div class="lbl">Categories done</div></div>
+    </div>
+
     <div class="toolbar">
       <button class="primary" id="btnSync" disabled>Sync to Google Sheet</button>
-      <button class="ghost" id="btnSave">Save locally now</button>
-      <button class="ghost" id="btnClear">Clear local draft</button>
+      <button class="ghost" id="btnSave">Save locally</button>
       <button class="ghost" id="btnExport">Export JSON</button>
+      <button class="ghost" id="btnClear">Clear draft</button>
     </div>
+
+    <div class="searchbar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Search an item — e.g. boot, coverall, ear plug…" />
+    </div>
+
     <div class="meta">
       <span>Sheet: Phase_2_Oct 26</span>
+      <span class="sep">·</span>
       <span id="lastSaved">Never saved</span>
+      <span class="sep">·</span>
       <span id="lastSynced">Never synced</span>
-      <span>Counts only Available + Defective stock</span>
     </div>
 
     <div id="formRoot"></div>
@@ -203,22 +342,38 @@
 
   <div class="toast" id="toast"></div>
   <footer>
-    Offline-first · localStorage durable · auto-sync when online · lightweight for long-term field use
+    Offline-first · saved to this device · syncs to the Google Sheet when online
   </footer>
 
   <script>
   /* ========== CONFIG – paste your Apps Script Web App URL after deploy ========== */
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzF370Q-uQynIYYOj0NAI9DjH5CLOg11Tkyykj-id0ycGzCF2JE9_anniVw3MnAMs9f/exec";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbygcxn_MfpJoZ5WQi28qgvmvWQpCU7MuGWytqe0le86DX6UgRNzx2JYj6SAhk-V1NPRUg/exec";
   /* =========================================================================== */
 
   const STORAGE_KEY = "arahas_ppe_inventory_v1";
   const META_KEY = "arahas_ppe_inventory_meta_v1";
 
+  /* ---------- Icons (inline, stroke-based) ---------- */
+  const ICONS = {
+    boot:     '<path d="M9 3v7.5c0 1-.5 1.8-1.3 2.4L4 16v3a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2c0-2.5-1.8-3.6-4-4.2-2.3-.6-4-1.4-4-3.8V3Z"/><path d="M9 3h6"/>',
+    coverall: '<path d="M8 3h8l1 4-2 1v11a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V8L7 7Z"/><path d="M8 10l-3 3v4"/><path d="M16 10l3 3v4"/>',
+    hardhat:  '<path d="M4 15a8 8 0 0 1 16 0Z"/><path d="M2 15h20"/><path d="M12 7V4"/>',
+    glove:    '<path d="M7 11V5a1.5 1.5 0 0 1 3 0v5"/><path d="M10 10V4a1.5 1.5 0 0 1 3 0v6"/><path d="M13 10V5a1.5 1.5 0 0 1 3 0v7"/><path d="M16 12V8a1.5 1.5 0 0 1 3 0v6c0 3.5-2 6-6 6H9c-2.8 0-4-1.6-4-4v-3.5c0-1 .5-1.7 1.4-2.2L8 11"/>',
+    earplug:  '<circle cx="9" cy="9" r="3.5"/><path d="M11.5 11.5 19 19"/><path d="m17 17 3 3"/>',
+    goggles:  '<circle cx="7.5" cy="12" r="3.5"/><circle cx="16.5" cy="12" r="3.5"/><path d="M11 12h2"/><path d="M4.5 9 3 7.5"/><path d="M19.5 9 21 7.5"/>',
+    raincoat: '<path d="M9 3h6l1 3-2 1.5V19a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V7.5L8 6Z"/><path d="M8 9 5 12v5"/><path d="M16 9l3 3v5"/>',
+    umbrella: '<path d="M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9Z"/><path d="M12 12v7a2 2 0 0 1-3 1.7"/><path d="M12 3v1"/>'
+  };
+  function icon(name) {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ICONS.boot}</svg>`;
+  }
+
   /* Exact catalogue matching Investory - PPEs.xlsx (Phase_2_Oct 26) */
   const CATALOGUE = [
     {
       id: "safety_boots",
-      title: "SAFETY BOOTS",
+      title: "Safety Boots",
+      icon: "boot",
       groups: [
         {
           key: "safety_joggers",
@@ -236,7 +391,8 @@
     },
     {
       id: "coverall",
-      title: "COVERALL",
+      title: "Coverall",
+      icon: "coverall",
       groups: [
         {
           key: "coverall_single",
@@ -254,49 +410,57 @@
     },
     {
       id: "utilities",
-      title: "UTILITIES",
+      title: "Utilities",
+      icon: "hardhat",
       groups: [
         {
           key: "hard_hats",
           label: "Hard hats (MSA/V-gard)\nType: Type I · Class E & Class G\nBrand: MSA V-Gard\nStandard: ANSI Z89.1-2003 · CSA Z94.1-05",
           sizes: null,
-          uom: "pieces"
+          uom: "pieces",
+          icon: "hardhat"
         },
         {
           key: "impact_gloves",
           label: "Impact resistant Hand gloves",
           sizes: ["Large Size"],
-          uom: "Dozens"
+          uom: "Dozens",
+          icon: "glove"
         },
         {
           key: "cotton_gloves",
           label: "Cotton dotted hand gloves (Beta Polka Dotted)",
           sizes: ["Large Size"],
-          uom: "Dozens"
+          uom: "Dozens",
+          icon: "glove"
         },
         {
           key: "ear_plugs",
           label: "Ear plugs (3M UltraFit™)\nType: OPTIME™ 3 · 25 dB attenuation\nBrand: 3M UltraFit™ (Yellow Plug / E-A-R)\nStandard: AS/NZS 1270:2002 Class 3 · NRR 25 dB (EPA)",
           sizes: ["3M Ear plugs- corded"],
-          uom: "pieces"
+          uom: "pieces",
+          icon: "earplug"
         },
         {
           key: "earmuffs",
           label: "Earmuffs",
           sizes: ["3M Hardhat mounted"],
-          uom: "pieces"
+          uom: "pieces",
+          icon: "earplug"
         },
         {
           key: "goggles",
           label: "Safety goggles\nType: 1 EA · Made in U.S.A.\nBrand: Astrospec 3000 · Black Frame – Clean Lens\nStandard: CSA Z94.3 / Z87.1+ (ANSI Z87.1 equivalent)",
           sizes: ["Uvex (Clear and Dark)"],
-          uom: "pieces"
+          uom: "pieces",
+          icon: "goggles"
         }
       ]
     },
     {
       id: "rain_boot",
-      title: "RAIN BOOT",
+      title: "Rain Boot",
+      icon: "boot",
       groups: [
         {
           key: "rain_boot_trucker",
@@ -308,7 +472,8 @@
     },
     {
       id: "rain_coat",
-      title: "RAIN COAT",
+      title: "Rain Coat",
+      icon: "raincoat",
       groups: [
         {
           key: "raincoat_zutech",
@@ -320,7 +485,8 @@
     },
     {
       id: "umbrella",
-      title: "UMBRELLA",
+      title: "Umbrella",
+      icon: "umbrella",
       groups: [
         {
           key: "umbrella",
@@ -335,6 +501,7 @@
   /* ---------- State ---------- */
   let data = {};          // { groupKey: { sizeOr"_": { available, defective } } }
   let meta = { lastSaved: null, lastSynced: null, dirty: false };
+  let searchTerm = "";
 
   function load() {
     try {
@@ -355,6 +522,7 @@
       meta.dirty = true;
       localStorage.setItem(META_KEY, JSON.stringify(meta));
       updateMetaUI();
+      updateStats();
       return true;
     } catch (e) {
       toast("Local save failed – storage full?", "err");
@@ -376,64 +544,165 @@
     meta.dirty = true;
   }
 
+  /* ---------- Stats ---------- */
+  function groupCells(g) {
+    return g.sizes && g.sizes.length ? g.sizes.length : 1;
+  }
+  function groupFilled(g) {
+    let n = 0;
+    const keys = g.sizes && g.sizes.length ? g.sizes : [null];
+    keys.forEach(sz => {
+      const a = getVal(g.key, sz, "available");
+      const d = getVal(g.key, sz, "defective");
+      if (a !== "" || d !== "") n++;
+    });
+    return n;
+  }
+  function computeStats() {
+    let totalCells = 0, filledCells = 0, sumAvail = 0, sumDefect = 0;
+    let catsDone = 0;
+    CATALOGUE.forEach(cat => {
+      let catCells = 0, catFilled = 0;
+      cat.groups.forEach(g => {
+        const cells = groupCells(g);
+        const filled = groupFilled(g);
+        catCells += cells; catFilled += filled;
+        totalCells += cells; filledCells += filled;
+        const keys = g.sizes && g.sizes.length ? g.sizes : [null];
+        keys.forEach(sz => {
+          const a = Number(getVal(g.key, sz, "available")) || 0;
+          const d = Number(getVal(g.key, sz, "defective")) || 0;
+          sumAvail += a; sumDefect += d;
+        });
+      });
+      if (catFilled >= catCells && catCells > 0) catsDone++;
+    });
+    return { totalCells, filledCells, sumAvail, sumDefect, catsDone, totalCats: CATALOGUE.length };
+  }
+  function updateStats() {
+    const s = computeStats();
+    const pct = s.totalCells ? Math.round((s.filledCells / s.totalCells) * 100) : 0;
+    document.getElementById("statProgress").textContent = pct + "%";
+    document.getElementById("statAvail").textContent = s.sumAvail.toLocaleString();
+    document.getElementById("statDefect").textContent = s.sumDefect.toLocaleString();
+    document.getElementById("statCats").textContent = s.catsDone + "/" + s.totalCats;
+
+    /* refresh quicknav badges */
+    CATALOGUE.forEach(cat => {
+      let cells = 0, filled = 0;
+      cat.groups.forEach(g => { cells += groupCells(g); filled += groupFilled(g); });
+      const chip = document.querySelector('.navchip[data-cat="' + cat.id + '"]');
+      if (chip) {
+        chip.querySelector(".count").textContent = filled + "/" + cells;
+        chip.classList.toggle("complete", cells > 0 && filled >= cells);
+      }
+      const badge = document.querySelector('.cat-badge[data-cat="' + cat.id + '"]');
+      if (badge) {
+        badge.textContent = filled + "/" + cells + " filled";
+        badge.classList.toggle("complete", cells > 0 && filled >= cells);
+      }
+    });
+  }
+
   /* ---------- Render ---------- */
+  function buildQuicknav() {
+    const nav = document.getElementById("quicknav");
+    nav.innerHTML = CATALOGUE.map(cat => `
+      <div class="navchip" data-cat="${cat.id}" onclick="document.getElementById('sec-${cat.id}').scrollIntoView({behavior:'smooth', block:'start'})">
+        ${icon(cat.icon || "boot")}
+        <span>${cat.title}</span>
+        <span class="count">0/0</span>
+      </div>
+    `).join("");
+  }
+
   function render() {
     const root = document.getElementById("formRoot");
     root.innerHTML = "";
+    let anyVisible = false;
 
     CATALOGUE.forEach(cat => {
       const details = document.createElement("details");
       details.className = "cat";
+      details.id = "sec-" + cat.id;
       details.open = true;
 
       const sum = document.createElement("summary");
       sum.className = "cat-head";
-      sum.innerHTML = `<span>${cat.title}</span><span style="font-weight:400;color:var(--muted);font-size:.8rem">tap to collapse</span>`;
+      sum.innerHTML = `
+        <div class="cat-head-left">
+          <div class="cat-icon">${icon(cat.icon || "boot")}</div>
+          <div>
+            <div class="cat-title">${cat.title}</div>
+            <div class="cat-sub">${cat.groups.length} item${cat.groups.length > 1 ? "s" : ""}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem;">
+          <span class="cat-badge" data-cat="${cat.id}">0/0 filled</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      `;
       details.appendChild(sum);
 
       const body = document.createElement("div");
       body.className = "cat-body";
+      let catHasVisible = false;
 
       cat.groups.forEach(g => {
-        const block = document.createElement("div");
-        block.className = "item-block";
+        const firstLine = g.label.split("\n")[0];
+        const matches = !searchTerm ||
+          g.label.toLowerCase().includes(searchTerm) ||
+          cat.title.toLowerCase().includes(searchTerm);
 
-        const title = document.createElement("div");
-        title.className = "item-title";
-        title.innerHTML = `<strong>${g.label.split("\n")[0]}</strong>\n${g.label.split("\n").slice(1).join("\n")}`;
-        block.appendChild(title);
+        const block = document.createElement("div");
+        block.className = "item-block" + (matches ? "" : " hidden");
+        if (matches) { catHasVisible = true; anyVisible = true; }
+
+        const filled = groupFilled(g);
+        const cells = groupCells(g);
+
+        const titleRow = document.createElement("div");
+        titleRow.className = "item-title-row";
+        titleRow.innerHTML = `
+          <div class="item-title"><strong>${firstLine}</strong>${g.label.split("\n").slice(1).join("\n")}</div>
+          <div class="item-fill">${filled}/${cells}</div>
+        `;
+        block.appendChild(titleRow);
 
         if (g.sizes && g.sizes.length) {
           const rows = document.createElement("div");
           rows.className = "rows";
           const hdr = document.createElement("div");
           hdr.className = "row header";
-          hdr.innerHTML = `<div>Size</div><div>Available</div><div>Defective</div>`;
+          hdr.innerHTML = `<div>Size</div><div class="lbl-avail">Available</div><div class="lbl-defect">Defective</div>`;
           rows.appendChild(hdr);
 
           g.sizes.forEach(sz => {
+            const av = getVal(g.key, sz, "available");
+            const de = getVal(g.key, sz, "defective");
             const row = document.createElement("div");
             row.className = "row";
             row.innerHTML = `
-              <div class="size">${sz}</div>
-              <input type="number" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="${sz}" data-f="available" value="${getVal(g.key, sz, "available")}" placeholder="0" />
-              <input type="number" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="${sz}" data-f="defective" value="${getVal(g.key, sz, "defective")}" placeholder="0" />
+              <div class="size ${av !== "" || de !== "" ? "filled" : ""}">${sz}</div>
+              <input type="number" class="avail ${av !== "" ? "has-val" : ""}" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="${sz}" data-f="available" value="${av}" placeholder="0" />
+              <input type="number" class="defect ${de !== "" ? "has-val" : ""}" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="${sz}" data-f="defective" value="${de}" placeholder="0" />
             `;
             rows.appendChild(row);
           });
           block.appendChild(rows);
         } else {
-          /* single quantity items */
+          const av = getVal(g.key, null, "available");
+          const de = getVal(g.key, null, "defective");
           const wrap = document.createElement("div");
           wrap.className = "single-row";
           wrap.innerHTML = `
-            <div class="field">
+            <div class="field avail">
               <label>Available (${g.uom})</label>
-              <input type="number" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="_" data-f="available" value="${getVal(g.key, null, "available")}" placeholder="0" />
+              <input type="number" class="avail ${av !== "" ? "has-val" : ""}" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="_" data-f="available" value="${av}" placeholder="0" />
             </div>
-            <div class="field">
+            <div class="field defect">
               <label>Defective (${g.uom})</label>
-              <input type="number" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="_" data-f="defective" value="${getVal(g.key, null, "defective")}" placeholder="0" />
+              <input type="number" class="defect ${de !== "" ? "has-val" : ""}" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="_" data-f="defective" value="${de}" placeholder="0" />
             </div>
           `;
           block.appendChild(wrap);
@@ -442,14 +711,24 @@
       });
 
       details.appendChild(body);
+      details.style.display = catHasVisible ? "" : "none";
       root.appendChild(details);
     });
+
+    if (!anyVisible) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "No items match “" + searchTerm + "”.";
+      root.appendChild(empty);
+    }
 
     /* bind inputs */
     root.querySelectorAll("input[type=number]").forEach(inp => {
       inp.addEventListener("change", onInput);
       inp.addEventListener("blur", onInput);
     });
+
+    updateStats();
   }
 
   function onInput(e) {
@@ -458,7 +737,9 @@
     const s = el.dataset.s === "_" ? null : el.dataset.s;
     const f = el.dataset.f;
     setVal(g, s, f, el.value);
+    el.classList.toggle("has-val", el.value !== "");
     persist();
+    render(); // refresh fill badges & size-chip highlight, preserves values from `data`
   }
 
   /* ---------- UI helpers ---------- */
@@ -569,6 +850,7 @@
 
   /* ---------- Init ---------- */
   load();
+  buildQuicknav();
   render();
   updateMetaUI();
   updateNet();
@@ -588,6 +870,15 @@
   });
   document.getElementById("btnClear").addEventListener("click", clearLocal);
   document.getElementById("btnExport").addEventListener("click", exportJSON);
+
+  let searchDebounce;
+  document.getElementById("searchInput").addEventListener("input", (e) => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+      searchTerm = e.target.value.trim().toLowerCase();
+      render();
+    }, 120);
+  });
 
   /* auto-persist every 30s if dirty */
   setInterval(() => { if (meta.dirty) persist(); }, 30000);
