@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="ARAHAS PPE Offline-First Inventory – Available & Defective stock capture" />
+  <title>ARAHAS PPE Inventory</title>
+  <style>
+    :root {
+      --bg: #f1f5f9;
+      --card: #1e293b;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --input: #0f172a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      min-height: 100dvh;
+      padding: 0 0 5rem;
+    }
+    header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(15,23,42,.92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      padding: .75rem 1rem;
+      display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between;
+    }
+    header h1 { font-size: 1.05rem; font-weight: 650; letter-spacing: .02em; }
+    .status {
+      display: flex; gap: .6rem; align-items: center; font-size: .8rem; color: var(--muted);
+    }
+    .dot {
+      width: .55rem; height: .55rem; border-radius: 50%;
+      background: var(--danger);
+    }
+    .dot.online { background: var(--ok); }
+    .dot.pending { background: var(--warn); }
+    main { max-width: 920px; margin: 0 auto; padding: 1rem; }
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem;
+    }
+    button, .btn {
+      appearance: none; border: 1px solid var(--border);
+      background: var(--card); color: var(--text);
+      padding: .55rem .9rem; border-radius: 8px; font-size: .875rem;
+      cursor: pointer; font-weight: 500;
+    }
+    button:hover { border-color: var(--accent); }
+    button.primary { background: var(--accent); color: #0f172a; border-color: transparent; font-weight: 650; }
+    button.primary:disabled { opacity: .5; cursor: not-allowed; }
+    button.ghost { background: transparent; }
+    .meta {
+      font-size: .78rem; color: var(--muted); margin-bottom: 1rem;
+      display: flex; flex-wrap: wrap; gap: .75rem;
+    }
+    section.cat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    section.cat > summary, .cat-head {
+      list-style: none;
+      padding: .85rem 1rem;
+      font-weight: 650;
+      cursor: pointer;
+      display: flex; justify-content: space-between; align-items: center;
+      background: #162032;
+      border-bottom: 1px solid var(--border);
+      user-select: none;
+    }
+    section.cat > summary::-webkit-details-marker { display: none; }
+    .cat-body { padding: .5rem .75rem 1rem; }
+    .item-block {
+      margin: .75rem 0;
+      padding: .65rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #162032;
+    }
+    .item-title {
+      font-size: .82rem;
+      color: var(--muted);
+      white-space: pre-line;
+      margin-bottom: .5rem;
+      line-height: 1.35;
+    }
+    .item-title strong { color: var(--text); font-size: .9rem; }
+    .rows { display: grid; gap: .4rem; }
+    .row {
+      display: grid;
+      grid-template-columns: minmax(70px, 90px) 1fr 1fr;
+      gap: .4rem;
+      align-items: center;
+      font-size: .85rem;
+    }
+    .row.header {
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--muted);
+      padding-bottom: .2rem;
+    }
+    .size {
+      font-weight: 600;
+      color: var(--accent);
+      text-align: center;
+      padding: .35rem;
+      background: var(--input);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+    input[type="number"] {
+      width: 100%;
+      background: var(--input);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: .4rem .5rem;
+      border-radius: 6px;
+      font-size: .9rem;
+      -moz-appearance: textfield;
+    }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(56,189,248,.25);
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .single-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .5rem;
+    }
+    .field label {
+      display: block;
+      font-size: .7rem;
+      color: var(--muted);
+      margin-bottom: .2rem;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    .toast {
+      position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%);
+      background: #1e293b; border: 1px solid var(--border);
+      color: var(--text); padding: .65rem 1.1rem; border-radius: 999px;
+      font-size: .85rem; z-index: 100; opacity: 0; pointer-events: none;
+      transition: opacity .25s; box-shadow: 0 8px 24px rgba(0,0,0,.35);
+    }
+    .toast.show { opacity: 1; }
+    .toast.ok { border-color: var(--ok); }
+    .toast.warn { border-color: var(--warn); }
+    .toast.err { border-color: var(--danger); }
+    footer {
+      text-align: center; font-size: .72rem; color: var(--muted);
+      padding: 1.5rem 1rem 2rem;
+    }
+    @media (max-width: 520px) {
+      .row { grid-template-columns: 64px 1fr 1fr; }
+      header h1 { font-size: .95rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ARAHAS PPE Inventory</h1>
+    <div class="status">
+      <span class="dot" id="netDot" title="Network"></span>
+      <span id="netLabel">Offline</span>
+      <span>·</span>
+      <span id="saveLabel">Local only</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <button class="primary" id="btnSync" disabled>Sync to Google Sheet</button>
+      <button class="ghost" id="btnSave">Save locally now</button>
+      <button class="ghost" id="btnClear">Clear local draft</button>
+      <button class="ghost" id="btnExport">Export JSON</button>
+    </div>
+    <div class="meta">
+      <span>Sheet: Phase_2_Oct 26</span>
+      <span id="lastSaved">Never saved</span>
+      <span id="lastSynced">Never synced</span>
+      <span>Counts only Available + Defective stock</span>
+    </div>
+
+    <div id="formRoot"></div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+  <footer>
+    Offline-first · localStorage durable · auto-sync when online · lightweight for long-term field use
+  </footer>
+
+  <script>
+  /* ========== CONFIG – paste your Apps Script Web App URL after deploy ========== */
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzF370Q-uQynIYYOj0NAI9DjH5CLOg11Tkyykj-id0ycGzCF2JE9_anniVw3MnAMs9f/exec";
+  /* =========================================================================== */
+
+  const STORAGE_KEY = "arahas_ppe_inventory_v1";
+  const META_KEY = "arahas_ppe_inventory_meta_v1";
+
+  /* Exact catalogue matching Investory - PPEs.xlsx (Phase_2_Oct 26) */
+  const CATALOGUE = [
+    {
+      id: "safety_boots",
+      title: "SAFETY BOOTS",
+      groups: [
+        {
+          key: "safety_joggers",
+          label: "Safety Boot\nType: Low/Ankle Shoes\nBrand : Safety Joggers\nStandard: BS EN ISO 20345, ASTM F2413-18 & ASTM F3445-21",
+          sizes: ["50","49","48","47","46","45","44","43","42","41","40","39","38"],
+          uom: "Pairs"
+        },
+        {
+          key: "redwings",
+          label: "Safety Boot\nType: Low/Ankle Shoes\nBrand : Redwings\nStandard: BS EN ISO 20345, ASTM F2413-18 & ASTM F3445-21",
+          sizes: ["50","49","48","47","46","45","44","43","42","41","40","39","38"],
+          uom: "Pairs"
+        }
+      ]
+    },
+    {
+      id: "coverall",
+      title: "COVERALL",
+      groups: [
+        {
+          key: "coverall_single",
+          label: "Coverall (Single)\nType: Flame-Resistant Workwear\nBrand : Red Wing / Protex\nStandard: EN ISO 11612:2015 · EN ISO 14116:2015 · EN ISO 11611:2015",
+          sizes: ["XXXXL","XXXL","XXL","XL","L","M"],
+          uom: "pieces"
+        },
+        {
+          key: "coverall_2piece",
+          label: "Coverall (2 Piece)\nType: Flame-Resistant Workwear\nBrand : Red Wing\nStandard: EN ISO 11612:2015 · EN ISO 14116:2015 · EN ISO 11611:2015",
+          sizes: ["XXXXL","XXXL","XXL","XL","L","M"],
+          uom: "pieces"
+        }
+      ]
+    },
+    {
+      id: "utilities",
+      title: "UTILITIES",
+      groups: [
+        {
+          key: "hard_hats",
+          label: "Hard hats (MSA/V-gard)\nType: Type I · Class E & Class G\nBrand: MSA V-Gard\nStandard: ANSI Z89.1-2003 · CSA Z94.1-05",
+          sizes: null,
+          uom: "pieces"
+        },
+        {
+          key: "impact_gloves",
+          label: "Impact resistant Hand gloves",
+          sizes: ["Large Size"],
+          uom: "Dozens"
+        },
+        {
+          key: "cotton_gloves",
+          label: "Cotton dotted hand gloves (Beta Polka Dotted)",
+          sizes: ["Large Size"],
+          uom: "Dozens"
+        },
+        {
+          key: "ear_plugs",
+          label: "Ear plugs (3M UltraFit™)\nType: OPTIME™ 3 · 25 dB attenuation\nBrand: 3M UltraFit™ (Yellow Plug / E-A-R)\nStandard: AS/NZS 1270:2002 Class 3 · NRR 25 dB (EPA)",
+          sizes: ["3M Ear plugs- corded"],
+          uom: "pieces"
+        },
+        {
+          key: "earmuffs",
+          label: "Earmuffs",
+          sizes: ["3M Hardhat mounted"],
+          uom: "pieces"
+        },
+        {
+          key: "goggles",
+          label: "Safety goggles\nType: 1 EA · Made in U.S.A.\nBrand: Astrospec 3000 · Black Frame – Clean Lens\nStandard: CSA Z94.3 / Z87.1+ (ANSI Z87.1 equivalent)",
+          sizes: ["Uvex (Clear and Dark)"],
+          uom: "pieces"
+        }
+      ]
+    },
+    {
+      id: "rain_boot",
+      title: "RAIN BOOT",
+      groups: [
+        {
+          key: "rain_boot_trucker",
+          label: "Rain Boot - Steel Toe (NINGO)\nType: S5 safety footwear (steel toe + penetration resistance, energy absorption heel)\nBrand: TRUCKER (Industrie Calzature)\nStandard: EN 345-1 S5 · ISO 6110 · ISO 6112 (CE marked)",
+          sizes: ["50","49","48","47","46","45","44","43","42","41","40","39","38"],
+          uom: "pieces"
+        }
+      ]
+    },
+    {
+      id: "rain_coat",
+      title: "RAIN COAT",
+      groups: [
+        {
+          key: "raincoat_zutech",
+          label: "Raincoat (Zutech Safety)",
+          sizes: ["XXXL","XXL","XL","L","M"],
+          uom: "pieces"
+        }
+      ]
+    },
+    {
+      id: "umbrella",
+      title: "UMBRELLA",
+      groups: [
+        {
+          key: "umbrella",
+          label: "Umbrella",
+          sizes: null,
+          uom: "pieces"
+        }
+      ]
+    }
+  ];
+
+  /* ---------- State ---------- */
+  let data = {};          // { groupKey: { sizeOr"_": { available, defective } } }
+  let meta = { lastSaved: null, lastSynced: null, dirty: false };
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) data = JSON.parse(raw);
+      const m = localStorage.getItem(META_KEY);
+      if (m) meta = JSON.parse(m);
+    } catch (e) {
+      console.warn("Load failed", e);
+      data = {};
+    }
+  }
+
+  function persist() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      meta.lastSaved = new Date().toISOString();
+      meta.dirty = true;
+      localStorage.setItem(META_KEY, JSON.stringify(meta));
+      updateMetaUI();
+      return true;
+    } catch (e) {
+      toast("Local save failed – storage full?", "err");
+      return false;
+    }
+  }
+
+  function getVal(groupKey, size, field) {
+    const g = data[groupKey] || {};
+    const s = g[size == null ? "_" : String(size)] || {};
+    return s[field] != null ? s[field] : "";
+  }
+
+  function setVal(groupKey, size, field, value) {
+    if (!data[groupKey]) data[groupKey] = {};
+    const k = size == null ? "_" : String(size);
+    if (!data[groupKey][k]) data[groupKey][k] = { available: "", defective: "" };
+    data[groupKey][k][field] = value === "" ? "" : Number(value);
+    meta.dirty = true;
+  }
+
+  /* ---------- Render ---------- */
+  function render() {
+    const root = document.getElementById("formRoot");
+    root.innerHTML = "";
+
+    CATALOGUE.forEach(cat => {
+      const details = document.createElement("details");
+      details.className = "cat";
+      details.open = true;
+
+      const sum = document.createElement("summary");
+      sum.className = "cat-head";
+      sum.innerHTML = `<span>${cat.title}</span><span style="font-weight:400;color:var(--muted);font-size:.8rem">tap to collapse</span>`;
+      details.appendChild(sum);
+
+      const body = document.createElement("div");
+      body.className = "cat-body";
+
+      cat.groups.forEach(g => {
+        const block = document.createElement("div");
+        block.className = "item-block";
+
+        const title = document.createElement("div");
+        title.className = "item-title";
+        title.innerHTML = `<strong>${g.label.split("\n")[0]}</strong>\n${g.label.split("\n").slice(1).join("\n")}`;
+        block.appendChild(title);
+
+        if (g.sizes && g.sizes.length) {
+          const rows = document.createElement("div");
+          rows.className = "rows";
+          const hdr = document.createElement("div");
+          hdr.className = "row header";
+          hdr.innerHTML = `<div>Size</div><div>Available</div><div>Defective</div>`;
+          rows.appendChild(hdr);
+
+          g.sizes.forEach(sz => {
+            const row = document.createElement("div");
+            row.className = "row";
+            row.innerHTML = `
+              <div class="size">${sz}</div>
+              <input type="number" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="${sz}" data-f="available" value="${getVal(g.key, sz, "available")}" placeholder="0" />
+              <input type="number" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="${sz}" data-f="defective" value="${getVal(g.key, sz, "defective")}" placeholder="0" />
+            `;
+            rows.appendChild(row);
+          });
+          block.appendChild(rows);
+        } else {
+          /* single quantity items */
+          const wrap = document.createElement("div");
+          wrap.className = "single-row";
+          wrap.innerHTML = `
+            <div class="field">
+              <label>Available (${g.uom})</label>
+              <input type="number" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="_" data-f="available" value="${getVal(g.key, null, "available")}" placeholder="0" />
+            </div>
+            <div class="field">
+              <label>Defective (${g.uom})</label>
+              <input type="number" min="0" step="1" inputmode="numeric" data-g="${g.key}" data-s="_" data-f="defective" value="${getVal(g.key, null, "defective")}" placeholder="0" />
+            </div>
+          `;
+          block.appendChild(wrap);
+        }
+        body.appendChild(block);
+      });
+
+      details.appendChild(body);
+      root.appendChild(details);
+    });
+
+    /* bind inputs */
+    root.querySelectorAll("input[type=number]").forEach(inp => {
+      inp.addEventListener("change", onInput);
+      inp.addEventListener("blur", onInput);
+    });
+  }
+
+  function onInput(e) {
+    const el = e.target;
+    const g = el.dataset.g;
+    const s = el.dataset.s === "_" ? null : el.dataset.s;
+    const f = el.dataset.f;
+    setVal(g, s, f, el.value);
+    persist();
+  }
+
+  /* ---------- UI helpers ---------- */
+  function updateMetaUI() {
+    document.getElementById("lastSaved").textContent =
+      meta.lastSaved ? "Saved " + new Date(meta.lastSaved).toLocaleString() : "Never saved";
+    document.getElementById("lastSynced").textContent =
+      meta.lastSynced ? "Synced " + new Date(meta.lastSynced).toLocaleString() : "Never synced";
+    document.getElementById("saveLabel").textContent =
+      meta.dirty ? "Local draft (unsynced)" : (meta.lastSynced ? "Synced" : "Local only");
+  }
+
+  function updateNet() {
+    const online = navigator.onLine;
+    const dot = document.getElementById("netDot");
+    const label = document.getElementById("netLabel");
+    const btn = document.getElementById("btnSync");
+    if (online) {
+      dot.className = "dot online";
+      label.textContent = "Online";
+      btn.disabled = APPS_SCRIPT_URL.includes("PASTE_YOUR");
+    } else {
+      dot.className = "dot";
+      label.textContent = "Offline";
+      btn.disabled = true;
+    }
+  }
+
+  function toast(msg, type = "ok") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show " + type;
+    clearTimeout(t._tid);
+    t._tid = setTimeout(() => t.classList.remove("show"), 2800);
+  }
+
+  /* ---------- Sync ---------- */
+  async function sync() {
+    if (!navigator.onLine) {
+      toast("No network – kept local", "warn");
+      return;
+    }
+    if (APPS_SCRIPT_URL.includes("PASTE_YOUR")) {
+      toast("Set APPS_SCRIPT_URL in the HTML first", "err");
+      return;
+    }
+
+    const payload = {
+      timestamp: new Date().toISOString(),
+      device: navigator.userAgent.slice(0, 80),
+      inventory: data,
+      catalogueVersion: 1
+    };
+
+    const btn = document.getElementById("btnSync");
+    btn.disabled = true;
+    btn.textContent = "Syncing…";
+
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        mode: "cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" }, // Apps Script prefers text/plain for simple CORS
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch { json = { ok: false, message: text }; }
+
+      if (json.ok) {
+        meta.lastSynced = new Date().toISOString();
+        meta.dirty = false;
+        localStorage.setItem(META_KEY, JSON.stringify(meta));
+        updateMetaUI();
+        toast("Synced to Google Sheet", "ok");
+      } else {
+        toast("Sync error: " + (json.message || "unknown"), "err");
+      }
+    } catch (err) {
+      console.error(err);
+      toast("Network/CORS error – data still local", "err");
+    } finally {
+      btn.disabled = !navigator.onLine;
+      btn.textContent = "Sync to Google Sheet";
+      updateNet();
+    }
+  }
+
+  /* ---------- Export / Clear ---------- */
+  function exportJSON() {
+    const blob = new Blob([JSON.stringify({ meta, inventory: data }, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "arahas-ppe-inventory-" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast("JSON exported", "ok");
+  }
+
+  function clearLocal() {
+    if (!confirm("Clear all local inventory numbers? This cannot be undone on this device.")) return;
+    data = {};
+    meta.dirty = true;
+    persist();
+    render();
+    toast("Local draft cleared", "warn");
+  }
+
+  /* ---------- Init ---------- */
+  load();
+  render();
+  updateMetaUI();
+  updateNet();
+
+  window.addEventListener("online", () => {
+    updateNet();
+    toast("Back online – you can sync", "ok");
+  });
+  window.addEventListener("offline", () => {
+    updateNet();
+    toast("Offline – changes stay local", "warn");
+  });
+
+  document.getElementById("btnSync").addEventListener("click", sync);
+  document.getElementById("btnSave").addEventListener("click", () => {
+    if (persist()) toast("Saved locally", "ok");
+  });
+  document.getElementById("btnClear").addEventListener("click", clearLocal);
+  document.getElementById("btnExport").addEventListener("click", exportJSON);
+
+  /* auto-persist every 30s if dirty */
+  setInterval(() => { if (meta.dirty) persist(); }, 30000);
+  </script>
+</body>
+</html>
